@@ -7,10 +7,10 @@ name = "image-generation-api"
 version = "0.1.0"
 description = "A FastAPI service for generating images using various AI providers"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "RainbowBird", email = "rbxin2003@outlook.com" }
 ]
 dependencies = [
     "fastapi>=0.104.0",

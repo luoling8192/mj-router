@@ -7,7 +7,49 @@ on:
     branches: [ main ]
 
 jobs:
-  lint-and-test:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Lint with ruff
+      run: |
+        ruff check .
+        ruff format --check .
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Type check with mypy
+      run: mypy src
+
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,14 +70,6 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
 
-    - name: Lint with ruff
-      run: |
-        ruff check .
-        ruff format --check .
-
-    - name: Type check with mypy
-      run: mypy src
-
     - name: Run tests
       run: |
         pytest tests/ --cov=src --cov-report=xml
@@ -44,4 +78,4 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
-        fail_ci_if_error: true 
+        fail_ci_if_error: true
