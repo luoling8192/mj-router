@@ -1,13 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "mj-router"
+name = "image-generation-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "A FastAPI service for generating images using various AI providers"
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "aiohttp>=3.11.11",
-    "fastapi>=0.115.6",
-    "pydantic>=2.10.4",
-    "python-dotenv>=1.0.1",
-    "uvicorn>=0.34.0",
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
 ]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.4.2",
+    "pydantic-settings>=2.0.3",
+    "python-dotenv>=1.0.0",
+    "aiohttp>=3.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.3",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.1",
+    "mypy>=1.7.0",
+    "ruff>=0.1.5",
+    "black>=23.11.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+]
+ignore = []
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=src --cov-report=term-missing"

@@ -2,20 +2,21 @@ version: "0.2"
 language: en
 words:
   - aiohttp
-  - dalle
+  - asyncio
   - dotenv
   - fastapi
-  - midjourney
-  - openai
+  - mypy
   - openrouter
   - pydantic
+  - pytest
+  - ruff
   - uvicorn
 ignorePaths:
-  - node_modules
-  - venv
   - .git
-  - .vscode
+  - .venv
   - __pycache__
+  - build
+  - dist
   - "*.pyc"
 dictionaries:
   - python
