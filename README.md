@@ -32,8 +32,31 @@ uv run src/main.py
 
 ## Configuration
 
-The application can be configured through environment variables or a `.env` file:
+### Environment Variables
+
+1. Copy the example configuration file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit `.env` and add your API keys:
+   ```bash
+   # Required
+   OPENAI_API_KEY=sk-your-openai-key-here
+   MIDJOURNEY_API_KEY=your-midjourney-key-here
+   ```
+
+3. (Optional) Customize other settings in `.env`:
+   - Application settings (APP_NAME, APP_HOST, etc.)
+   - Provider configurations (timeouts, retries, etc.)
+   - Global request settings
+
+### Configuration Priority
+
+1. Environment variables take precedence over `.env` file values
+2. `.env` file values override default settings
+3. Default values are used if no configuration is provided
 
 ### Provider Configuration
 
-Provider-specific settings can be configured using the `PROVIDER_CONFIGS` environment variable:
+You can customize provider-specific settings using the `PROVIDER_CONFIGS` environment variable:

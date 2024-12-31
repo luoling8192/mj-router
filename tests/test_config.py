@@ -47,17 +47,17 @@ def test_settings_validation_succeeds_with_keys(clean_env: None) -> None:
     )
 
     settings = Settings()
-    assert settings.openai_api_key == "test-key"
-    assert settings.midjourney_api_key == "test-key"
+    assert settings.OPENAI_API_KEY == "test-key"
+    assert settings.MIDJOURNEY_API_KEY == "test-key"
 
 
 def test_settings_defaults() -> None:
     """Test that Settings uses correct default values."""
     settings = get_settings()
-    assert settings.app_name == "Image Generation API"
-    assert settings.app_host == "0.0.0.0"
-    assert settings.app_port == 8000
-    assert settings.app_url == "https://your-site.com"
+    assert settings.APP_NAME == "Image Generation API"
+    assert settings.APP_HOST == "0.0.0.0"
+    assert settings.APP_PORT == 8000
+    assert settings.APP_URL == "https://your-site.com"
 
 
 def test_provider_config_defaults() -> None:
@@ -65,14 +65,14 @@ def test_provider_config_defaults() -> None:
     settings = Settings()
 
     # Test DALL-E config
-    dalle_config = settings.provider_configs["dalle"]
+    dalle_config = settings.PROVIDER_CONFIGS["dalle"]
     assert dalle_config["api_url"] == "https://api.openai.com/v1/images/generations"
     assert dalle_config["default_model"] == "dall-e-3"
     assert dalle_config["timeout"] == 30
     assert dalle_config["max_retries"] == 3
 
     # Test Midjourney config
-    midjourney_config = settings.provider_configs["midjourney"]
+    midjourney_config = settings.PROVIDER_CONFIGS["midjourney"]
     assert midjourney_config["api_url"] == "https://api.midjourney.com/v1/generations"
     assert midjourney_config["timeout"] == 60
     assert midjourney_config["max_retries"] == 3
@@ -83,7 +83,7 @@ def test_custom_provider_config(clean_env: None) -> None:
     os.environ["PROVIDER_CONFIGS"] = '{"dalle": {"timeout": 45, "max_retries": 5}}'
 
     settings = Settings()
-    dalle_config = settings.provider_configs["dalle"]
+    dalle_config = settings.PROVIDER_CONFIGS["dalle"]
     assert dalle_config["timeout"] == 45
     assert dalle_config["max_retries"] == 5
     # Other values should remain at defaults

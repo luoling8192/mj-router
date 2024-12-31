@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Generator
 
@@ -16,8 +17,8 @@ def has_api_keys() -> bool:
     settings = get_settings()
     return all(
         [
-            settings.openai_api_key and settings.openai_api_key != "test_key",
-            settings.midjourney_api_key and settings.midjourney_api_key != "test_key",
+            settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "test_key",
+            settings.MIDJOURNEY_API_KEY and settings.MIDJOURNEY_API_KEY != "test_key",
         ]
     )
 
@@ -45,3 +46,8 @@ def env_setup() -> Generator:
             os.environ.pop(key, None)
         else:
             os.environ[key] = value
+
+
+@pytest.fixture(autouse=True)
+def setup_logging(caplog):
+    caplog.set_level(logging.DEBUG)
