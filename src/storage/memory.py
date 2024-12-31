@@ -4,7 +4,7 @@ from src.models.schemas import ImageResponse
 
 
 class MemoryStorage:
-    def __init__(self):
+    def __init__(self) -> None:
         self._tasks: Dict[str, ImageResponse] = {}
 
     def get_task(self, task_id: str) -> Optional[ImageResponse]:
@@ -20,5 +20,5 @@ class MemoryStorage:
         return False
 
 
-# 全局单例
+# Global singleton
 storage = MemoryStorage()

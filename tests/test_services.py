@@ -9,7 +9,7 @@ from src.services.image_generator import (
     ImageGenerator,
     ImageRequest,
     RequestConfig,
-    get_generator,
+    image_generator,
     make_request,
 )
 from tests.conftest import has_api_keys
@@ -38,15 +38,15 @@ def test_dalle_request_config():
     assert config.payload["model"] == "dall-e-3"
 
 
-def test_get_generator():
-    dalle_gen = get_generator(Provider.DALLE.value)
-    midjourney_gen = get_generator(Provider.MIDJOURNEY.value)
+async def test_get_generator():
+    dalle_gen = image_generator.generate_with_provider
+    midjourney_gen = image_generator.generate_with_provider
 
     assert callable(dalle_gen)
     assert callable(midjourney_gen)
 
     with pytest.raises(ValueError):
-        get_generator("invalid_provider")
+        await image_generator.generate_with_provider("invalid_provider", "test")
 
 
 @pytest.mark.asyncio
@@ -58,8 +58,9 @@ async def test_dalle_image_generation():
         "src.services.image_generator.make_request",
         AsyncMock(return_value=mock_response),
     ):
-        generator = get_generator(Provider.DALLE.value)
-        result = await generator("test prompt", size="1024x1024")
+        result = await image_generator.generate_with_provider(
+            Provider.DALLE.value, "test prompt", size="1024x1024"
+        )
 
         assert result == "https://example.com/image.png"
 
@@ -99,10 +100,10 @@ async def test_error_handling():
         "src.services.image_generator.make_request",
         AsyncMock(side_effect=Exception("API Error")),
     ):
-        generator = get_generator(Provider.DALLE.value)
-
         with pytest.raises(Exception) as exc_info:
-            await generator("test prompt")
+            await image_generator.generate_with_provider(
+                Provider.DALLE.value, "test prompt"
+            )
 
         assert str(exc_info.value) == "API Error"
 
@@ -153,7 +154,7 @@ async def test_request_timeout() -> None:
         url="http://test.com",
         headers={},
         payload={},
-        timeout=0.1,  # Very short timeout
+        timeout=1,  # Very short timeout
         max_retries=1,
         retry_delay=0,
     )

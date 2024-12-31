@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from src.models.enums import TaskStatus
 from src.models.schemas import ImageRequest as APIImageRequest
 from src.models.schemas import ImageResponse
-from src.services.image_generator import get_generator
+from src.services.image_generator import image_generator
 from src.storage.memory import storage
 
 router = APIRouter()
@@ -25,12 +25,9 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
     storage.save_task(task)
 
     try:
-        # Get the appropriate generator function for the provider
-        generator = get_generator(request.provider.value)
-
-        # Call the generator with the prompt and additional parameters
-        result_url = await generator(
+        result_url = await image_generator.route_request(
             prompt=request.prompt,
+            provider=request.provider.value,
             size=request.size,
             **(request.additional_params or {}),
         )

@@ -82,7 +82,8 @@ async def make_request(config: RequestConfig) -> JsonResponse:
                     config.url, headers=config.headers, json=config.payload
                 ) as response:
                     if response.status == 200:
-                        return await response.json()
+                        json_response: JsonResponse = await response.json()
+                        return json_response
                     error_text = await response.text()
                     raise APIError(response.status, error_text)
         except aiohttp.ClientError as e:

@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     # Request configurations
     request_timeout: int = Field(
         default=30, description="Default request timeout in seconds"
-    )  # noqa: E501
+    )
     max_retries: int = Field(default=3, description="Maximum number of request retries")
     retry_delay: int = Field(default=1, description="Delay between retries in seconds")
 
