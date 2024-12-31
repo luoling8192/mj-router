@@ -58,3 +58,33 @@ def test_settings_defaults() -> None:
     assert settings.app_host == "0.0.0.0"
     assert settings.app_port == 8000
     assert settings.app_url == "https://your-site.com"
+
+
+def test_provider_config_defaults() -> None:
+    """Test that provider configurations have correct default values"""
+    settings = Settings()
+
+    # Test DALL-E config
+    dalle_config = settings.provider_configs["dalle"]
+    assert dalle_config["api_url"] == "https://api.openai.com/v1/images/generations"
+    assert dalle_config["default_model"] == "dall-e-3"
+    assert dalle_config["timeout"] == 30
+    assert dalle_config["max_retries"] == 3
+
+    # Test Midjourney config
+    midjourney_config = settings.provider_configs["midjourney"]
+    assert midjourney_config["api_url"] == "https://api.midjourney.com/v1/generations"
+    assert midjourney_config["timeout"] == 60
+    assert midjourney_config["max_retries"] == 3
+
+
+def test_custom_provider_config(clean_env: None) -> None:
+    """Test that provider configurations can be overridden"""
+    os.environ["PROVIDER_CONFIGS"] = '{"dalle": {"timeout": 45, "max_retries": 5}}'
+
+    settings = Settings()
+    dalle_config = settings.provider_configs["dalle"]
+    assert dalle_config["timeout"] == 45
+    assert dalle_config["max_retries"] == 5
+    # Other values should remain at defaults
+    assert dalle_config["api_url"] == "https://api.openai.com/v1/images/generations"

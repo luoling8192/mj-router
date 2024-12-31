@@ -3,6 +3,7 @@ language: en
 words:
   - aiohttp
   - asyncio
+  - DALL
   - dotenv
   - fastapi
   - mypy
