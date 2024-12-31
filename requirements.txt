@@ -9,7 +9,6 @@ fastapi==0.115.6
 frozenlist==1.5.0
 h11==0.14.0
 idna==3.10
-mj-router @ file:///Users/luoling8192/Projects/mj-router
 multidict==6.1.0
 propcache==0.2.1
 pydantic==2.10.4
