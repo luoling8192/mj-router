@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from models.schemas import ImageResponse
+from src.models.schemas import ImageResponse
 
 
 class MemoryStorage:

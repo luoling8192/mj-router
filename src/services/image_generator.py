@@ -5,8 +5,8 @@ from typing import Any, Callable, Dict, TypeVar
 import aiohttp
 from fastapi import HTTPException
 
-from core.config import get_settings
-from models.enums import Provider
+from src.core.config import get_settings
+from src.models.enums import Provider
 
 
 @dataclass(frozen=True)

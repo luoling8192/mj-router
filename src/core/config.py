@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -12,8 +13,10 @@ class Settings(BaseSettings):
     app_port: int = 8000
     app_url: str = "https://your-site.com"
 
-    class Config:
-        env_file = ".env"
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+    )
 
 
 @lru_cache()

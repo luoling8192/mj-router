@@ -4,11 +4,11 @@ from typing import Dict
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
-from models.enums import TaskStatus
-from models.schemas import ImageRequest as APIImageRequest
-from models.schemas import ImageResponse
-from services.image_generator import get_generator
-from storage.memory import storage
+from src.models.enums import TaskStatus
+from src.models.schemas import ImageRequest as APIImageRequest
+from src.models.schemas import ImageResponse
+from src.services.image_generator import get_generator
+from src.storage.memory import storage
 
 router = APIRouter()
 
@@ -40,9 +40,9 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
 
         # Extract URL based on provider response format
         task.result_url = (
-            result["data"][0]["url"]
+            result.get("data", [{}])[0].get("url")
             if request.provider.value == "openrouter"
-            else result["image_url"]
+            else result.get("data", [{}])[0].get("url")
         )
         task.status = TaskStatus.COMPLETED
         task.completed_at = datetime.now()
@@ -80,6 +80,7 @@ async def generate_image(
 
 @router.get("/status/{task_id}", response_model=ImageResponse)
 async def get_task_status(task_id: str) -> ImageResponse:
+    """Gets the status of a specific task"""
     task = storage.get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -88,6 +89,7 @@ async def get_task_status(task_id: str) -> ImageResponse:
 
 @router.delete("/tasks/{task_id}")
 async def delete_task(task_id: str) -> Dict[str, str]:
+    """Deletes a specific task"""
     if storage.delete_task(task_id):
         return {"status": "deleted"}
     raise HTTPException(status_code=404, detail="Task not found")

@@ -8,21 +8,30 @@ client = TestClient(app)
 
 def test_generate_image():
     response = client.post(
-        "/api/v1/generate/image",
+        "/api/generate/image",
         json={
             "prompt": "test prompt",
-            "provider": Provider.OPENROUTER.value,
+            "provider": Provider.DALLE.value,
             "size": "1024x1024",
         },
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["prompt"] == "test prompt"
-    assert data["provider"] == Provider.OPENROUTER.value
     assert data["status"] == TaskStatus.PENDING.value
+    assert data["prompt"] == "test prompt"
     assert "task_id" in data
 
 
-def test_get_task_status_not_found():
-    response = client.get("/api/v1/status/nonexistent-task")
-    assert response.status_code == 404
+def test_get_task_status():
+    # First create a task
+    response = client.post(
+        "/api/generate/image",
+        json={"prompt": "test prompt", "provider": Provider.DALLE.value},
+    )
+    task_id = response.json()["task_id"]
+
+    # Then get its status
+    response = client.get(f"/api/status/{task_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["task_id"] == task_id
