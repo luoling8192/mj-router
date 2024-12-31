@@ -87,7 +87,7 @@ def create_midjourney_request(request: ImageRequest) -> RequestConfig:
     )
 
 
-class ResponseTransformer(Protocol):
+class ResponseTransformer(Protocol):  # noqa: F811
     """Protocol for response transformation functions"""
 
     def __call__(self, response: Dict[str, Any]) -> Optional[str]: ...

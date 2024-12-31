@@ -32,7 +32,7 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
         result_url = await generator(
             prompt=request.prompt,
             size=request.size,
-            **(request.additional_params or {})
+            **(request.additional_params or {}),
         )
 
         if result_url:
