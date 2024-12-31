@@ -146,8 +146,8 @@ class ImageGenerator:
             RouterConfig(
                 default_provider=Provider.DALLE.value,
                 fallback_provider=Provider.MIDJOURNEY.value,
-                max_retries=self.settings.max_retries,
-                retry_delay=self.settings.retry_delay,
+                max_retries=self.settings.MAX_RETRIES,
+                retry_delay=self.settings.RETRY_DELAY,
             ),
             self,
         )
@@ -167,11 +167,11 @@ class ImageGenerator:
 
     def _create_dalle_request(self, request: ImageRequest) -> RequestConfig:
         """Creates DALL-E API request configuration"""
-        provider_config = self.settings.provider_configs["dalle"]
+        provider_config = self.settings.PROVIDER_CONFIGS["dalle"]
         return RequestConfig(
             url=provider_config["api_url"],
             headers={
-                "Authorization": f"Bearer {self.settings.openai_api_key}",
+                "Authorization": f"Bearer {self.settings.OPENAI_API_KEY}",
                 "Content-Type": "application/json",
             },
             payload={
@@ -188,11 +188,11 @@ class ImageGenerator:
 
     def _create_midjourney_request(self, request: ImageRequest) -> RequestConfig:
         """Creates Midjourney API request configuration"""
-        provider_config = self.settings.provider_configs["midjourney"]
+        provider_config = self.settings.PROVIDER_CONFIGS["midjourney"]
         return RequestConfig(
             url=provider_config["api_url"],
             headers={
-                "Authorization": f"Bearer {self.settings.midjourney_api_key}",
+                "Authorization": f"Bearer {self.settings.MIDJOURNEY_API_KEY}",
                 "Content-Type": "application/json",
             },
             payload={"prompt": request.prompt, **(request.additional_params or {})},
