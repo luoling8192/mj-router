@@ -5,14 +5,20 @@ from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from models.enums import TaskStatus
-from models.schemas import ImageRequest, ImageResponse
+from models.schemas import ImageRequest as APIImageRequest, ImageResponse
 from services.image_generator import get_generator
 from storage.memory import storage
 
 router = APIRouter()
 
 
-async def process_image_request(task_id: str, request: ImageRequest) -> None:
+async def process_image_request(task_id: str, request: APIImageRequest) -> None:
+    """
+    Processes image generation request asynchronously
+    
+    Uses functional generators to handle different providers while maintaining
+    consistent task state management
+    """
     task = storage.get_task(task_id)
     if not task:
         return
@@ -21,9 +27,17 @@ async def process_image_request(task_id: str, request: ImageRequest) -> None:
     storage.save_task(task)
 
     try:
+        # Get the appropriate generator function for the provider
         generator = get_generator(request.provider.value)
-        result = await generator.generate(request.prompt)
+        
+        # Call the generator with the prompt and additional parameters
+        result = await generator(
+            prompt=request.prompt,
+            size=request.size,
+            **(request.additional_params or {})
+        )
 
+        # Extract URL based on provider response format
         task.result_url = (
             result["data"][0]["url"]
             if request.provider.value == "openrouter"
@@ -42,8 +56,13 @@ async def process_image_request(task_id: str, request: ImageRequest) -> None:
 
 @router.post("/generate/image", response_model=ImageResponse)
 async def generate_image(
-    request: ImageRequest, background_tasks: BackgroundTasks
+    request: APIImageRequest, background_tasks: BackgroundTasks
 ) -> ImageResponse:
+    """
+    Initiates an asynchronous image generation request
+    
+    Returns a task object that can be used to track the generation progress
+    """
     task_id = str(uuid.uuid4())
     task = ImageResponse(
         task_id=task_id,

@@ -5,8 +5,10 @@ import os
 @pytest.fixture(autouse=True)
 def env_setup():
     """Set up test environment variables."""
+    os.environ["OPENAI_API_KEY"] = "test_key"
     os.environ["OPENROUTER_API_KEY"] = "test_key"
     os.environ["MIDJOURNEY_API_KEY"] = "test_key"
     yield
+    del os.environ["OPENAI_API_KEY"]
     del os.environ["OPENROUTER_API_KEY"]
     del os.environ["MIDJOURNEY_API_KEY"] 
