@@ -1,1 +1,1 @@
-"""Service layer implementations""" 
+"""Service layer implementations"""

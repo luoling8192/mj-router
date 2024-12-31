@@ -1,6 +1,7 @@
-import pytest
-from fastapi.testclient import TestClient
 import os
+
+import pytest
+
 
 @pytest.fixture(autouse=True)
 def env_setup():
@@ -11,4 +12,4 @@ def env_setup():
     yield
     del os.environ["OPENAI_API_KEY"]
     del os.environ["OPENROUTER_API_KEY"]
-    del os.environ["MIDJOURNEY_API_KEY"] 
+    del os.environ["MIDJOURNEY_API_KEY"]

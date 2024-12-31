@@ -1,11 +1,12 @@
-from typing import Dict
 import uuid
 from datetime import datetime
+from typing import Dict
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from models.enums import TaskStatus
-from models.schemas import ImageRequest as APIImageRequest, ImageResponse
+from models.schemas import ImageRequest as APIImageRequest
+from models.schemas import ImageResponse
 from services.image_generator import get_generator
 from storage.memory import storage
 
@@ -15,7 +16,7 @@ router = APIRouter()
 async def process_image_request(task_id: str, request: APIImageRequest) -> None:
     """
     Processes image generation request asynchronously
-    
+
     Uses functional generators to handle different providers while maintaining
     consistent task state management
     """
@@ -29,12 +30,12 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
     try:
         # Get the appropriate generator function for the provider
         generator = get_generator(request.provider.value)
-        
+
         # Call the generator with the prompt and additional parameters
         result = await generator(
             prompt=request.prompt,
             size=request.size,
-            **(request.additional_params or {})
+            **(request.additional_params or {}),
         )
 
         # Extract URL based on provider response format
@@ -60,7 +61,7 @@ async def generate_image(
 ) -> ImageResponse:
     """
     Initiates an asynchronous image generation request
-    
+
     Returns a task object that can be used to track the generation progress
     """
     task_id = str(uuid.uuid4())

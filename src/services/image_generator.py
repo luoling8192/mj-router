@@ -1,6 +1,6 @@
-from typing import Dict, Protocol, Any, Callable, TypeVar
 from dataclasses import dataclass
 from functools import partial
+from typing import Any, Callable, Dict, TypeVar
 
 import aiohttp
 from fastapi import HTTPException
@@ -17,17 +17,17 @@ class ImageRequest:
     model: str | None = None
     additional_params: Dict[str, Any] = None
 
-    def with_params(self, **kwargs) -> 'ImageRequest':
+    def with_params(self, **kwargs) -> "ImageRequest":
         """Creates a new ImageRequest with updated parameters"""
         return ImageRequest(
             prompt=self.prompt,
-            size=kwargs.get('size', self.size),
-            quality=kwargs.get('quality', self.quality),
-            model=kwargs.get('model', self.model),
+            size=kwargs.get("size", self.size),
+            quality=kwargs.get("quality", self.quality),
+            model=kwargs.get("model", self.model),
             additional_params={
                 **(self.additional_params or {}),
-                **kwargs.get('additional_params', {})
-            }
+                **kwargs.get("additional_params", {}),
+            },
         )
 
 
@@ -38,7 +38,7 @@ class RequestConfig:
     payload: Dict[str, Any]
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 RequestTransformer = Callable[[ImageRequest], RequestConfig]
 ResponseTransformer = Callable[[Dict], T]
 
@@ -47,15 +47,12 @@ async def make_request(config: RequestConfig) -> Dict:
     """Makes HTTP request and handles errors"""
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            config.url,
-            headers=config.headers,
-            json=config.payload
+            config.url, headers=config.headers, json=config.payload
         ) as response:
             if response.status == 200:
                 return await response.json()
             raise HTTPException(
-                status_code=response.status,
-                detail=await response.text()
+                status_code=response.status, detail=await response.text()
             )
 
 
@@ -74,7 +71,7 @@ def create_dalle_request(request: ImageRequest) -> RequestConfig:
             "quality": request.quality,
             "model": "dall-e-3",
             "n": 1,
-        }
+        },
     )
 
 
@@ -94,7 +91,7 @@ def create_openrouter_request(request: ImageRequest) -> RequestConfig:
             "prompt": request.prompt,
             "quality": request.quality,
             "size": request.size,
-        }
+        },
     )
 
 
@@ -107,17 +104,12 @@ def create_midjourney_request(request: ImageRequest) -> RequestConfig:
             "Authorization": f"Bearer {settings.midjourney_api_key}",
             "Content-Type": "application/json",
         },
-        payload={
-            "prompt": request.prompt,
-            **(request.additional_params or {})
-        }
+        payload={"prompt": request.prompt, **(request.additional_params or {})},
     )
 
 
 async def generate_image(
-    request_transformer: RequestTransformer,
-    prompt: str,
-    **kwargs
+    request_transformer: RequestTransformer, prompt: str, **kwargs
 ) -> Dict:
     """Generic image generation function"""
     request = ImageRequest(prompt=prompt, **kwargs)
@@ -138,8 +130,8 @@ def get_generator(provider: str) -> Callable[[str, ...], Dict]:
         Provider.OPENROUTER.value: generate_openrouter,
         Provider.MIDJOURNEY.value: generate_midjourney,
     }
-    
+
     if provider not in generators:
         raise ValueError(f"Unsupported provider: {provider}")
-        
+
     return generators[provider]
