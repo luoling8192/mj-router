@@ -16,9 +16,6 @@ router = APIRouter()
 async def process_image_request(task_id: str, request: APIImageRequest) -> None:
     """
     Processes image generation request asynchronously
-
-    Uses functional generators to handle different providers while maintaining
-    consistent task state management
     """
     task = storage.get_task(task_id)
     if not task:
@@ -32,19 +29,19 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
         generator = get_generator(request.provider.value)
 
         # Call the generator with the prompt and additional parameters
-        result = await generator(
+        result_url = await generator(
             prompt=request.prompt,
             size=request.size,
-            **(request.additional_params or {}),
+            **(request.additional_params or {})
         )
 
-        # Extract URL based on provider response format
-        task.result_url = (
-            result.get("data", [{}])[0].get("url")
-            if request.provider.value == "openrouter"
-            else result.get("data", [{}])[0].get("url")
-        )
-        task.status = TaskStatus.COMPLETED
+        if result_url:
+            task.result_url = result_url
+            task.status = TaskStatus.COMPLETED
+        else:
+            task.status = TaskStatus.FAILED
+            task.error_message = "Failed to generate image: No URL returned"
+
         task.completed_at = datetime.now()
 
     except Exception as e:

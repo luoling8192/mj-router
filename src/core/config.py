@@ -1,8 +1,9 @@
 import os
 from functools import lru_cache
+from typing import Self
 
-from pydantic import ConfigDict, Field, model_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -15,9 +16,6 @@ class Settings(BaseSettings):
     # API Keys
     openai_api_key: str = Field(
         default_factory=lambda: os.environ.get("OPENAI_API_KEY", "")
-    )
-    openrouter_api_key: str = Field(
-        default_factory=lambda: os.environ.get("OPENROUTER_API_KEY", "")
     )
     midjourney_api_key: str = Field(
         default_factory=lambda: os.environ.get("MIDJOURNEY_API_KEY", "")
@@ -35,18 +33,16 @@ class Settings(BaseSettings):
         default="https://your-site.com", description="Public URL of the application"
     )
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=True, extra="ignore"
     )
 
     @model_validator(mode="after")
-    def validate_api_keys(self) -> "Settings":
+    def validate_api_keys(self) -> "Self":
         """Validate that all required API keys are set."""
         missing_keys = []
         if not self.openai_api_key:
             missing_keys.append("OPENAI_API_KEY")
-        if not self.openrouter_api_key:
-            missing_keys.append("OPENROUTER_API_KEY")
         if not self.midjourney_api_key:
             missing_keys.append("MIDJOURNEY_API_KEY")
 

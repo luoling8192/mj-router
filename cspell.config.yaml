@@ -6,7 +6,6 @@ words:
   - dotenv
   - fastapi
   - mypy
-  - openrouter
   - pydantic
   - pytest
   - ruff

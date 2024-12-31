@@ -1,7 +1,7 @@
 
 # AI Image Generation API
 
-A FastAPI service that provides a unified interface for generating images using various AI providers (DALL-E, Midjourney, OpenRouter).
+A FastAPI service that provides a unified interface for generating images using various AI providers (DALL-E, Midjourney).
 
 ## Features
 

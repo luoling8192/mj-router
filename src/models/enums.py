@@ -11,4 +11,3 @@ class TaskStatus(str, Enum):
 class Provider(str, Enum):
     DALLE = "dalle"
     MIDJOURNEY = "midjourney"
-    OPENROUTER = "openrouter"

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from functools import partial
-from typing import Any, Callable, Dict, TypeVar
+from typing import Any, Callable, Dict, Optional, Protocol, TypeVar
 
 import aiohttp
 from fastapi import HTTPException
@@ -15,7 +14,7 @@ class ImageRequest:
     size: str = "1024x1024"
     quality: str = "standard"
     model: str | None = None
-    additional_params: Dict[str, Any] = None
+    additional_params: Dict[str, Any] | None = None
 
     def with_params(self, **kwargs) -> "ImageRequest":
         """Creates a new ImageRequest with updated parameters"""
@@ -75,26 +74,6 @@ def create_dalle_request(request: ImageRequest) -> RequestConfig:
     )
 
 
-def create_openrouter_request(request: ImageRequest) -> RequestConfig:
-    """Creates OpenRouter API request configuration"""
-    settings = get_settings()
-    return RequestConfig(
-        url="https://openrouter.ai/api/v1/images/generations",
-        headers={
-            "Authorization": f"Bearer {settings.openrouter_api_key}",
-            "HTTP-Referer": settings.app_url,
-            "X-Title": settings.app_name,
-            "Content-Type": "application/json",
-        },
-        payload={
-            "model": request.model or "openai/dall-e-3",
-            "prompt": request.prompt,
-            "quality": request.quality,
-            "size": request.size,
-        },
-    )
-
-
 def create_midjourney_request(request: ImageRequest) -> RequestConfig:
     """Creates Midjourney API request configuration"""
     settings = get_settings()
@@ -108,30 +87,64 @@ def create_midjourney_request(request: ImageRequest) -> RequestConfig:
     )
 
 
+class ResponseTransformer(Protocol):
+    """Protocol for response transformation functions"""
+
+    def __call__(self, response: Dict[str, Any]) -> Optional[str]: ...
+
+
+@dataclass(frozen=True)
+class ProviderConfig:
+    """Configuration for each provider including request and response handling"""
+
+    request_transformer: RequestTransformer
+    response_transformer: ResponseTransformer
+
+
+def transform_dalle_response(response: Dict[str, Any]) -> Optional[str]:
+    """Extracts image URL from DALL-E response"""
+    try:
+        return response["data"][0]["url"]
+    except (KeyError, IndexError):
+        return None
+
+
+def transform_midjourney_response(response: Dict[str, Any]) -> Optional[str]:
+    """Extracts image URL from Midjourney response"""
+    try:
+        # Adjust this based on actual Midjourney API response structure
+        return response.get("image_url")
+    except (KeyError, IndexError):
+        return None
+
+
+# Update provider configurations
+PROVIDER_CONFIGS: Dict[str, ProviderConfig] = {
+    Provider.DALLE.value: ProviderConfig(
+        request_transformer=create_dalle_request,
+        response_transformer=transform_dalle_response,
+    ),
+    Provider.MIDJOURNEY.value: ProviderConfig(
+        request_transformer=create_midjourney_request,
+        response_transformer=transform_midjourney_response,
+    ),
+}
+
+
 async def generate_image(
-    request_transformer: RequestTransformer, prompt: str, **kwargs
-) -> Dict:
-    """Generic image generation function"""
+    provider_config: ProviderConfig, prompt: str, **kwargs
+) -> Optional[str]:
+    """Generic image generation function that returns the image URL"""
     request = ImageRequest(prompt=prompt, **kwargs)
-    config = request_transformer(request)
-    return await make_request(config)
+    config = provider_config.request_transformer(request)
+    response = await make_request(config)
+    return provider_config.response_transformer(response)
 
 
-# Create specialized generator functions
-generate_dalle = partial(generate_image, create_dalle_request)
-generate_openrouter = partial(generate_image, create_openrouter_request)
-generate_midjourney = partial(generate_image, create_midjourney_request)
-
-
-def get_generator(provider: str) -> Callable[[str, ...], Dict]:
+def get_generator(provider: str) -> Callable[[str, Dict[str, Any]], Optional[str]]:
     """Returns appropriate generator function based on provider"""
-    generators = {
-        Provider.DALLE.value: generate_dalle,
-        Provider.OPENROUTER.value: generate_openrouter,
-        Provider.MIDJOURNEY.value: generate_midjourney,
-    }
-
-    if provider not in generators:
+    if provider not in PROVIDER_CONFIGS:
         raise ValueError(f"Unsupported provider: {provider}")
 
-    return generators[provider]
+    config = PROVIDER_CONFIGS[provider]
+    return lambda prompt, **kwargs: generate_image(config, prompt, **kwargs)

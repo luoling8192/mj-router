@@ -17,7 +17,6 @@ def has_api_keys() -> bool:
     return all(
         [
             settings.openai_api_key and settings.openai_api_key != "test_key",
-            settings.openrouter_api_key and settings.openrouter_api_key != "test_key",
             settings.midjourney_api_key and settings.midjourney_api_key != "test_key",
         ]
     )
@@ -29,7 +28,6 @@ def env_setup() -> Generator:
     original_env = {}
     test_keys = {
         "OPENAI_API_KEY": "test_key",
-        "OPENROUTER_API_KEY": "test_key",
         "MIDJOURNEY_API_KEY": "test_key",
     }
 

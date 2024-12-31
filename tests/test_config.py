@@ -3,14 +3,14 @@ from typing import Generator
 
 import pytest
 
-from core.config import Settings, get_settings
+from src.core.config import Settings, get_settings
 
 
 @pytest.fixture
 def clean_env() -> Generator:
     """Remove all API keys from environment for testing."""
     original = {}
-    keys = ["OPENAI_API_KEY", "OPENROUTER_API_KEY", "MIDJOURNEY_API_KEY"]
+    keys = ["OPENAI_API_KEY", "MIDJOURNEY_API_KEY"]
 
     # Save and remove environment variables
     for key in keys:
@@ -34,7 +34,6 @@ def test_settings_validation_fails_without_keys(clean_env: None) -> None:
     error_msg = str(exc_info.value)
     assert "Missing required API keys" in error_msg
     assert "OPENAI_API_KEY" in error_msg
-    assert "OPENROUTER_API_KEY" in error_msg
     assert "MIDJOURNEY_API_KEY" in error_msg
 
 
@@ -43,14 +42,12 @@ def test_settings_validation_succeeds_with_keys(clean_env: None) -> None:
     os.environ.update(
         {
             "OPENAI_API_KEY": "test-key",
-            "OPENROUTER_API_KEY": "test-key",
             "MIDJOURNEY_API_KEY": "test-key",
         }
     )
 
     settings = Settings()
     assert settings.openai_api_key == "test-key"
-    assert settings.openrouter_api_key == "test-key"
     assert settings.midjourney_api_key == "test-key"
 
 
