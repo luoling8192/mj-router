@@ -8,6 +8,7 @@ from src.services.image_generator import (
     create_openrouter_request,
     get_generator,
 )
+from tests.conftest import has_api_keys
 
 
 def test_image_request():
@@ -19,6 +20,7 @@ def test_image_request():
     assert request.size == "1024x1024"  # Original unchanged
 
 
+@pytest.mark.skipif(not has_api_keys(), reason="API keys not configured")
 def test_dalle_request_config():
     request = ImageRequest(prompt="test prompt", size="1024x1024")
     config = create_dalle_request(request)
@@ -30,6 +32,7 @@ def test_dalle_request_config():
     assert config.payload["model"] == "dall-e-3"
 
 
+@pytest.mark.skipif(not has_api_keys(), reason="API keys not configured")
 def test_openrouter_request_config():
     request = ImageRequest(prompt="test prompt", model="openai/dall-e-3")
     config = create_openrouter_request(request)
@@ -41,8 +44,7 @@ def test_openrouter_request_config():
     assert config.payload["model"] == "openai/dall-e-3"
 
 
-@pytest.mark.asyncio
-async def test_get_generator():
+def test_get_generator():
     dalle_gen = get_generator(Provider.DALLE.value)
     openrouter_gen = get_generator(Provider.OPENROUTER.value)
 

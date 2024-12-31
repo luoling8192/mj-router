@@ -1,11 +1,14 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from src.main import app
 from src.models.enums import Provider, TaskStatus
+from tests.conftest import has_api_keys
 
 client = TestClient(app)
 
 
+@pytest.mark.skipif(not has_api_keys(), reason="API keys not configured")
 def test_generate_image():
     response = client.post(
         "/api/generate/image",
@@ -22,6 +25,7 @@ def test_generate_image():
     assert "task_id" in data
 
 
+@pytest.mark.skipif(not has_api_keys(), reason="API keys not configured")
 def test_get_task_status():
     # First create a task
     response = client.post(
