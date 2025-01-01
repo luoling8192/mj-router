@@ -11,6 +11,7 @@ class ImageRequest(BaseModel):
     provider: Provider
     size: str = "1024x1024"
     additional_params: Optional[Dict[str, Any]] = None
+    webhook_url: Optional[str] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -19,6 +20,7 @@ class ImageRequest(BaseModel):
                 "provider": "dalle",
                 "size": "1024x1024",
                 "additional_params": {"quality": "standard"},
+                "webhook_url": "https://api.example.com/webhook",
             }
         }
     )

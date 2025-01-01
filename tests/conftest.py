@@ -4,7 +4,14 @@ from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
 
-from src.core.config import ApiKeys, AppConfig, RequestConfig, Settings, get_settings
+from src.core.config import (
+    ApiKeys,
+    AppConfig,
+    RequestConfig,
+    Settings,
+    WebhookConfig,
+    get_settings,
+)
 from src.main import app
 
 
@@ -24,7 +31,7 @@ def settings() -> Generator[Settings, None, None]:
             port=8000,
             url="http://test.com",
         ),
-        api_keys=ApiKeys(openai="test-openai-key"),
+        api_keys=ApiKeys(OPENAI_API_KEY="test-openai-key"),
         providers={
             "dalle": {
                 "api_url": "https://api.openai.com/v1/images/generations",
@@ -34,7 +41,7 @@ def settings() -> Generator[Settings, None, None]:
                 "retry_delay": 1,
             },
             "midjourney": {
-                "api_url": "http://localhost:8080",
+                "api_url": "http://localhost:8080/mj",
                 "timeout": 30,
                 "max_retries": 3,
                 "retry_delay": 1,
@@ -46,6 +53,12 @@ def settings() -> Generator[Settings, None, None]:
             timeout=30,
             max_retries=3,
             retry_delay=1,
+        ),
+        webhook=WebhookConfig(
+            timeout=10,
+            max_retries=3,
+            retry_delay=1,
+            default_url="http://localhost:8888/webhook",
         ),
     )
 

@@ -1,3 +1,5 @@
+import logging
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,4 +32,5 @@ app.include_router(router, prefix="/api")
 if __name__ == "__main__":
     import uvicorn
 
+    logging.basicConfig(level=logging.DEBUG)
     uvicorn.run("main:app", host=settings.app.host, port=settings.app.port, reload=True)

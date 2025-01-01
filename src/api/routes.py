@@ -8,6 +8,7 @@ from src.models.enums import TaskStatus
 from src.models.schemas import ImageRequest as APIImageRequest
 from src.models.schemas import ImageResponse
 from src.services.image_generator import generate_image
+from src.services.task_events import task_events
 from src.storage.memory import storage
 
 router = APIRouter()
@@ -23,6 +24,7 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
 
     task.status = TaskStatus.PROCESSING
     storage.save_task(task)
+    await task_events.notify_task_started(task, request.webhook_url)
 
     try:
         result_url = await generate_image(
@@ -47,6 +49,7 @@ async def process_image_request(task_id: str, request: APIImageRequest) -> None:
         task.completed_at = datetime.now()
 
     storage.save_task(task)
+    await task_events.notify_task_completed(task, request.webhook_url)
 
 
 @router.post("/generate/image", response_model=ImageResponse)
@@ -68,6 +71,7 @@ async def generate_image_endpoint(
     )
 
     storage.save_task(task)
+    await task_events.notify_task_created(task, request.webhook_url)
     background_tasks.add_task(process_image_request, task_id, request)
     return task
 
@@ -84,6 +88,12 @@ async def get_task_status(task_id: str) -> ImageResponse:
 @router.delete("/tasks/{task_id}")
 async def delete_task(task_id: str) -> Dict[str, str]:
     """Deletes a specific task"""
+    task = storage.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
     if storage.delete_task(task_id):
+        await task_events.notify_task_deleted(task, None)  # No webhook_url for delete
         return {"status": "deleted"}
+
     raise HTTPException(status_code=404, detail="Task not found")

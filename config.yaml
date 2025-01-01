@@ -11,7 +11,7 @@ providers:
     retry_delay: 1
 
   midjourney:
-    api_url: "http://localhost:8080"
+    api_url: "http://localhost:8080/mj"
     timeout: 60
     max_retries: 3
     retry_delay: 2
@@ -21,4 +21,10 @@ providers:
 request:
   timeout: 30
   max_retries: 3
-  retry_delay: 1 
+  retry_delay: 1
+
+webhook:
+  timeout: 10
+  max_retries: 3
+  retry_delay: 1
+  default_url: "http://localhost:8888/webhook"

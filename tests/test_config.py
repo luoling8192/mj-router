@@ -3,7 +3,14 @@ from typing import Generator
 
 import pytest
 
-from src.core.config import ApiKeys, AppConfig, RequestConfig, Settings, get_settings
+from src.core.config import (
+    ApiKeys,
+    AppConfig,
+    RequestConfig,
+    Settings,
+    WebhookConfig,
+    get_settings,
+)
 
 
 @pytest.fixture
@@ -33,9 +40,15 @@ def test_settings_validation_fails_without_keys(clean_env: None) -> None:
             app=AppConfig(
                 name="test", host="localhost", port=8000, url="http://test.com"
             ),
-            api_keys=ApiKeys(openai=""),
+            api_keys=ApiKeys(OPENAI_API_KEY=""),
             providers={},
             request=RequestConfig(timeout=30, max_retries=3, retry_delay=1),
+            webhook=WebhookConfig(
+                timeout=10,
+                max_retries=3,
+                retry_delay=1,
+                default_url="http://localhost:8888/webhook",
+            ),
         )
 
     error_msg = str(exc_info.value)
@@ -53,9 +66,15 @@ def test_settings_validation_succeeds_with_keys(clean_env: None) -> None:
             port=8000,
             url="http://test.com",
         ),
-        api_keys=ApiKeys(openai="test-key"),
+        api_keys=ApiKeys(OPENAI_API_KEY="test-key"),
         providers={},
         request=RequestConfig(timeout=30, max_retries=3, retry_delay=1),
+        webhook=WebhookConfig(
+            timeout=10,
+            max_retries=3,
+            retry_delay=1,
+            default_url="http://localhost:8888/webhook",
+        ),
     )
     assert settings.OPENAI_API_KEY == "test-key"
 
@@ -78,7 +97,7 @@ def test_provider_config_defaults() -> None:
             port=8000,
             url="http://test.com",
         ),
-        api_keys=ApiKeys(openai="test-key"),
+        api_keys=ApiKeys(OPENAI_API_KEY="test-key"),
         providers={
             "dalle": {
                 "api_url": "https://api.openai.com/v1/images/generations",
@@ -89,6 +108,12 @@ def test_provider_config_defaults() -> None:
             }
         },
         request=RequestConfig(timeout=30, max_retries=3, retry_delay=1),
+        webhook=WebhookConfig(
+            timeout=10,
+            max_retries=3,
+            retry_delay=1,
+            default_url="http://localhost:8888/webhook",
+        ),
     )
 
     # Test DALL-E config
@@ -108,7 +133,7 @@ def test_custom_provider_config(clean_env: None) -> None:
             port=8000,
             url="http://test.com",
         ),
-        api_keys=ApiKeys(openai="test-key"),
+        api_keys=ApiKeys(OPENAI_API_KEY="test-key"),
         providers={
             "dalle": {
                 "api_url": "https://api.openai.com/v1/images/generations",
@@ -119,6 +144,12 @@ def test_custom_provider_config(clean_env: None) -> None:
             }
         },
         request=RequestConfig(timeout=30, max_retries=3, retry_delay=1),
+        webhook=WebhookConfig(
+            timeout=10,
+            max_retries=3,
+            retry_delay=1,
+            default_url="http://localhost:8888/webhook",
+        ),
     )
     dalle_config = settings.PROVIDER_CONFIGS["dalle"]
     assert dalle_config["timeout"] == 45

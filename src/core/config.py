@@ -2,7 +2,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict
 
-import dotenv
 import yaml
 from dotenv import load_dotenv
 from pydantic import Field, field_validator
@@ -58,6 +57,20 @@ class AppConfig(BaseSettings):
     )
 
 
+class WebhookConfig(BaseSettings):
+    """Webhook configuration"""
+
+    timeout: int = Field(default=10)
+    max_retries: int = Field(default=3)
+    retry_delay: int = Field(default=1)
+    default_url: str = Field(default="")
+
+    model_config = SettingsConfigDict(
+        env_prefix="WEBHOOK_",
+        extra="ignore",
+    )
+
+
 class ApiKeys(BaseSettings):
     """API keys configuration"""
 
@@ -88,6 +101,7 @@ class Settings(BaseSettings):
     api_keys: ApiKeys
     providers: Dict[str, Dict[str, Any]]
     request: RequestConfig
+    webhook: WebhookConfig
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
@@ -106,6 +120,7 @@ class Settings(BaseSettings):
             api_keys=ApiKeys(),  # API keys from environment variables
             providers=config["providers"],
             request=RequestConfig(**config["request"]),
+            webhook=WebhookConfig(**config.get("webhook", {})),
         )
 
         return settings
