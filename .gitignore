@@ -42,3 +42,6 @@ htmlcov/
 
 # Misc
 .DS_Store
+
+# Config
+config.local.yaml

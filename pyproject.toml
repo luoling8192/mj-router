@@ -27,6 +27,7 @@ dependencies = [
     "ruff>=0.1.5",
     "black>=23.11.0",
     "tenacity>=9.0.0",
+    "pyyaml>=6.0.2",
 ]
 
 [tool.hatch.build.targets.wheel]

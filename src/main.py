@@ -12,7 +12,7 @@ load_dotenv()
 settings = get_settings()
 
 app = FastAPI(
-    title=settings.APP_NAME,
+    title=settings.app.name,
     description="API for generating images using various AI providers",
     version="0.1.0",
 )
@@ -30,4 +30,4 @@ app.include_router(router, prefix="/api")
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host=settings.APP_HOST, port=settings.APP_PORT, reload=True)
+    uvicorn.run("main:app", host=settings.app.host, port=settings.app.port, reload=True)
