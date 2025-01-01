@@ -1,5 +1,7 @@
+import asyncio
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Callable, Dict, Optional, TypeVar, cast
 
 import aiohttp
@@ -136,6 +138,38 @@ class ImageRouter:
             raise
 
 
+# Add new data classes for account management
+@dataclass(frozen=True)
+class MJAccount:
+    """Represents a Midjourney account status"""
+    id: str
+    channel_id: str
+    guild_id: str
+    core_size: int
+    queue_size: int
+    timeout_minutes: int
+    user_agent: str
+    user_token: str
+    enable: bool
+    properties: Dict[str, Any]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "MJAccount":
+        """Create MJAccount instance from API response"""
+        return cls(
+            id=data.get("id", ""),
+            channel_id=data.get("channelId", ""),
+            guild_id=data.get("guildId", ""),
+            core_size=data.get("coreSize", 0),
+            queue_size=data.get("queueSize", 0),
+            timeout_minutes=data.get("timeoutMinutes", 0),
+            user_agent=data.get("userAgent", ""),
+            user_token=data.get("userToken", ""),
+            enable=data.get("enable", False),
+            properties=data.get("properties", {})
+        )
+
+
 class ImageGenerator:
     """Handles image generation requests for different providers"""
 
@@ -189,17 +223,60 @@ class ImageGenerator:
     def _create_midjourney_request(self, request: ImageRequest) -> RequestConfig:
         """Creates Midjourney API request configuration"""
         provider_config = self.settings.PROVIDER_CONFIGS["midjourney"]
+
+        # Get additional parameters or empty dict
+        additional_params = request.additional_params or {}
+
+        # If account_id is not provided, it will be selected automatically during task submission
+        payload = {
+            "prompt": request.prompt,
+            "base64Array": [],
+            "notifyHook": "",
+            "state": "",
+            **additional_params
+        }
+
         return RequestConfig(
-            url=provider_config["api_url"],
+            url=f"{provider_config['api_url']}/submit/imagine",
             headers={
                 "Authorization": f"Bearer {self.settings.MIDJOURNEY_API_KEY}",
                 "Content-Type": "application/json",
             },
-            payload={"prompt": request.prompt, **(request.additional_params or {})},
+            payload=payload,
             timeout=provider_config["timeout"],
             max_retries=provider_config["max_retries"],
             retry_delay=provider_config["retry_delay"],
         )
+
+    async def _poll_midjourney_task(self, task_id: str, max_attempts: int = 30, delay: int = 10) -> Optional[str]:
+        """Polls Midjourney task status until completion or timeout"""
+        provider_config = self.settings.PROVIDER_CONFIGS["midjourney"]
+
+        for _ in range(max_attempts):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(
+                        f"{provider_config['api_url']}/task/{task_id}/fetch",
+                        headers={"Authorization": f"Bearer {self.settings.MIDJOURNEY_API_KEY}"}
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            raise APIError(response.status, error_text)
+
+                        data = await response.json()
+                        status = data.get("status", "")
+
+                        if status == MJTaskStatus.COMPLETED:
+                            return data.get("imageUrl")
+                        elif status == MJTaskStatus.FAILED:
+                            raise APIError(400, data.get("failReason", "Task failed"))
+
+                        # Task still in progress, wait before next attempt
+                        await asyncio.sleep(delay)
+            except aiohttp.ClientError as e:
+                raise APIError(500, f"Network error while polling: {str(e)}")
+
+        raise APIError(408, "Timeout waiting for Midjourney task completion")
 
     @staticmethod
     def _transform_dalle_response(response: JsonResponse) -> Optional[ImageUrl]:
@@ -211,10 +288,12 @@ class ImageGenerator:
 
     @staticmethod
     def _transform_midjourney_response(response: JsonResponse) -> Optional[ImageUrl]:
-        """Extracts image URL from Midjourney response"""
+        """Extracts task ID from Midjourney submit response"""
         try:
-            return cast(Optional[str], response.get("image_url"))
-        except (KeyError, IndexError):
+            if response.get("code") != 1:
+                raise APIError(400, response.get("description", "Failed to submit task"))
+            return str(response["result"])  # Return task ID as string
+        except (KeyError, TypeError):
             return None
 
     async def generate_image(
@@ -224,10 +303,28 @@ class ImageGenerator:
         try:
             request = ImageRequest(prompt=prompt, **kwargs)
             config = provider_config.request_transformer(request)
+
+            # For Midjourney, try to get an available account first
+            if "midjourney" in config.url:
+                account_id = kwargs.get("account_id")
+                if not account_id:
+                    account_id = await self._get_available_mj_account()
+                    if not account_id:
+                        raise APIError(503, "No available Midjourney accounts")
+                    config.payload["account_id"] = account_id
+
             response = await make_request(config)
+
+            # For Midjourney, we need to poll for the final result
+            if "midjourney" in config.url:
+                task_id = provider_config.response_transformer(response)
+                if task_id:
+                    return await self._poll_midjourney_task(task_id)
+                return None
+
             return provider_config.response_transformer(response)
         except APIError as e:
-            raise HTTPException(status_code=e.status_code, detail=e.message)  # noqa: B904
+            raise HTTPException(status_code=e.status_code, detail=e.message)
 
     async def generate_with_provider(
         self, provider: str, prompt: str, **kwargs: Any
@@ -244,6 +341,63 @@ class ImageGenerator:
     ) -> Optional[ImageUrl]:
         """Public method to route requests through the router"""
         return await self.router.route_request(prompt, provider, **kwargs)
+
+    async def get_mj_accounts(self) -> list[MJAccount]:
+        """Fetch all Midjourney accounts status"""
+        provider_config = self.settings.PROVIDER_CONFIGS["midjourney"]
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{provider_config['api_url']}/account/list",
+                    headers={"Authorization": f"Bearer {self.settings.MIDJOURNEY_API_KEY}"}
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise APIError(response.status, error_text)
+
+                    data = await response.json()
+                    return [MJAccount.from_dict(account) for account in data]
+        except aiohttp.ClientError as e:
+            raise APIError(500, f"Network error while fetching accounts: {str(e)}")
+
+    async def get_mj_account(self, account_id: str) -> Optional[MJAccount]:
+        """Fetch specific Midjourney account status"""
+        provider_config = self.settings.PROVIDER_CONFIGS["midjourney"]
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{provider_config['api_url']}/account/{account_id}/fetch",
+                    headers={"Authorization": f"Bearer {self.settings.MIDJOURNEY_API_KEY}"}
+                ) as response:
+                    if response.status == 404:
+                        return None
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise APIError(response.status, error_text)
+
+                    data = await response.json()
+                    return MJAccount.from_dict(data)
+        except aiohttp.ClientError as e:
+            raise APIError(500, f"Network error while fetching account {account_id}: {str(e)}")
+
+    async def _get_available_mj_account(self) -> Optional[str]:
+        """Get an available Midjourney account ID for task submission"""
+        accounts = await self.get_mj_accounts()
+
+        # Filter enabled accounts with available capacity
+        available_accounts = [
+            acc for acc in accounts
+            if acc.enable and acc.queue_size < acc.core_size
+        ]
+
+        # Sort by current load (queue_size/core_size ratio)
+        available_accounts.sort(
+            key=lambda acc: acc.queue_size / acc.core_size if acc.core_size > 0 else float('inf')
+        )
+
+        return available_accounts[0].id if available_accounts else None
 
 
 # Global instance
@@ -268,3 +422,12 @@ async def generate_image(
         HTTPException: If image generation fails
     """
     return await image_generator.route_request(prompt, provider, **kwargs)
+
+
+# Add new constants
+class MJTaskStatus(str, Enum):
+    """Midjourney task status"""
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "SUCCESS"
+    FAILED = "FAILED"

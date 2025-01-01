@@ -69,11 +69,12 @@ class Settings(BaseSettings):
                 "retry_delay": 1,
             },
             "midjourney": {
-                "api_url": "https://api.midjourney.com/v1/generations",
-                "api_version": "v1",
+                "api_url": "http://localhost:8080",
                 "timeout": 60,
                 "max_retries": 3,
                 "retry_delay": 2,
+                "poll_timeout": 300,
+                "poll_interval": 10,
             },
         },
     )
