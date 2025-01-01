@@ -1,53 +1,46 @@
-import logging
-import os
 from typing import Generator
 
 import pytest
+from fastapi.testclient import TestClient
 
 from src.core.config import Settings, get_settings
-
-
-@pytest.fixture
-def settings() -> Settings:
-    return get_settings()
+from src.main import app
 
 
 def has_api_keys() -> bool:
-    """Check if all required API keys are present and not test values"""
+    """Check if required API keys are configured"""
     settings = get_settings()
-    return all(
-        [
-            settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "test_key",
-            settings.MIDJOURNEY_API_KEY and settings.MIDJOURNEY_API_KEY != "test_key",
-        ]
+    return bool(settings.OPENAI_API_KEY)
+
+
+@pytest.fixture
+def settings() -> Generator[Settings, None, None]:
+    """Provide test settings"""
+    test_settings = Settings(
+        OPENAI_API_KEY="test-openai-key",
+        PROVIDER_CONFIGS={
+            "dalle": {
+                "api_url": "https://api.openai.com/v1/images/generations",
+                "default_model": "dall-e-3",
+                "timeout": 30,
+                "max_retries": 3,
+                "retry_delay": 1,
+            },
+            "midjourney": {
+                "api_url": "http://localhost:8080",
+                "timeout": 30,
+                "max_retries": 3,
+                "retry_delay": 1,
+                "poll_max_attempts": 2,
+                "poll_interval": 1,
+            },
+        },
     )
+    yield test_settings
 
 
-@pytest.fixture(autouse=True)
-def env_setup() -> Generator:
-    """Set up test environment variables if they don't exist."""
-    original_env = {}
-    test_keys = {
-        "OPENAI_API_KEY": "test_key",
-        "MIDJOURNEY_API_KEY": "test_key",
-    }
-
-    # Save original environment and set test values
-    for key, value in test_keys.items():
-        original_env[key] = os.environ.get(key)
-        if not os.environ.get(key):
-            os.environ[key] = value
-
-    yield
-
-    # Restore original environment
-    for key, value in original_env.items():
-        if value is None:
-            os.environ.pop(key, None)
-        else:
-            os.environ[key] = value
-
-
-@pytest.fixture(autouse=True)
-def setup_logging(caplog):
-    caplog.set_level(logging.DEBUG)
+@pytest.fixture
+def client(settings) -> Generator[TestClient, None, None]:
+    """Provide test client"""
+    with TestClient(app) as test_client:
+        yield test_client

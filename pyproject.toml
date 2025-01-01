@@ -45,7 +45,10 @@ select = [
     "C",   # flake8-comprehensions
     "B",   # flake8-bugbear
 ]
-ignore = []
+ignore = [
+    "B904",
+    "E501",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

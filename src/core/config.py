@@ -34,10 +34,6 @@ class Settings(BaseSettings):
         default="",
         description="OpenAI API key",
     )
-    MIDJOURNEY_API_KEY: str = Field(
-        default="",
-        description="Midjourney API key",
-    )
 
     # Application Settings
     APP_NAME: str = Field(
@@ -98,20 +94,10 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_api_keys(self) -> Self:
         """Validate API keys"""
-        missing_keys = []
-
-        # Validate OpenAI API key
         if not self.OPENAI_API_KEY:
-            missing_keys.append("OPENAI_API_KEY")
-
-        # Validate Midjourney API key
-        if not self.MIDJOURNEY_API_KEY:
-            missing_keys.append("MIDJOURNEY_API_KEY")
-
-        if missing_keys:
             raise ValueError(
-                f"Missing required API keys: {', '.join(missing_keys)}. "
-                "Please set them in your environment or .env file."
+                "Missing required API key: OPENAI_API_KEY. "
+                "Please set it in your environment or .env file."
             )
         return self
 
@@ -132,6 +118,6 @@ def verify_api_keys() -> bool:
     """Verify API keys are valid"""
     try:
         settings = get_settings()
-        return bool(settings.OPENAI_API_KEY and settings.MIDJOURNEY_API_KEY)
+        return bool(settings.OPENAI_API_KEY)
     except Exception:
         return False
