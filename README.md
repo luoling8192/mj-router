@@ -1,62 +1,58 @@
 # AI Image Generation API
 
-A FastAPI service that provides a unified interface for generating images using various AI providers (DALL-E, Midjourney).
+A unified FastAPI service for generating images through multiple AI providers (DALL-E, Midjourney). Integrates with [midjourney-proxy](https://github.com/novicezk/midjourney-proxy) for Midjourney support.
 
-## Features
+## Key Features
 
-- 🚀 Asynchronous image generation
-- 🔄 Multiple AI provider support
-- 📊 Task status tracking
-- 🔐 Provider-specific API key management
-- 📝 Comprehensive API documentation
+🎨 Core Features:
+- 🔄 Asynchronous image generation with real-time progress tracking
+- 🤖 Support for multiple AI providers (DALL-E, Midjourney)
+- 📚 Comprehensive API documentation with OpenAPI/Swagger
 
-## Quick Start
+⚙️ Technical Features:
+- 🔌 Provider-agnostic interface with extensible provider system
+- 🛡️ Robust error handling and retry mechanisms
+- ⏳ Rate limiting and request queueing
+- 📊 Structured logging and monitoring
 
-### Prerequisites
+## Getting Started
 
-- Python 3.12+
-- uv
+### System Requirements
 
-### Installation
+- Python 3.12 or higher
+- Package manager: uv
+- For Midjourney integration:
+  - Running midjourney-proxy instance
+  - Discord account with active Midjourney subscription
+  - Discord server and channel configuration
 
-```bash
-uv pip install -r requirements.txt
-uv pip install -r requirements-dev.txt
-```
+### Setup Guide
 
-### Running the application
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/luoling8192/mj-router.git
+   cd mj-router
+   ```
 
-```bash
-uv run src/main.py
-```
+2. Set up Python environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Windows: `.venv\Scripts\activate`
+   ```
 
-## Configuration
+3. Install dependencies:
+   ```bash
+   uv venv
+   uv pip install -r requirements.txt
+   ```
 
-### Environment Variables
-
-1. Copy the example configuration file:
+4. Configure environment:
    ```bash
    cp .env.example .env
+   # Edit .env with your configuration
    ```
 
-2. Edit `.env` and add your API keys:
+5. Launch development server:
    ```bash
-   # Required
-   OPENAI_API_KEY=sk-your-openai-key-here
-   MIDJOURNEY_API_KEY=your-midjourney-key-here
+   uvicorn src.main:app --reload --port 8000
    ```
-
-3. (Optional) Customize other settings in `.env`:
-   - Application settings (APP_NAME, APP_HOST, etc.)
-   - Provider configurations (timeouts, retries, etc.)
-   - Global request settings
-
-### Configuration Priority
-
-1. Environment variables take precedence over `.env` file values
-2. `.env` file values override default settings
-3. Default values are used if no configuration is provided
-
-### Provider Configuration
-
-You can customize provider-specific settings using the `PROVIDER_CONFIGS` environment variable:
